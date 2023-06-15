@@ -8,12 +8,12 @@ from new_subdomain.utils import log
 
 
 def compute_new_subdomains(
-        input_path: str = NCD_PATH,
-        output_path: str = NSD_PATH,
-        nsd_date: str = '2023-06-13',
-        window_days: int = WINDOW_DAYS,
-        subdomain_depth: int = MAX_SUBDOMAIN_DEPTH,
-        domain_whitelist: list = DOMAIN_WHITELIST
+    input_path: str = NCD_PATH,
+    output_path: str = NSD_PATH,
+    nsd_date: str = '2023-06-13',
+    window_days: int = WINDOW_DAYS,
+    subdomain_depth: int = MAX_SUBDOMAIN_DEPTH,
+    domain_whitelist: list = DOMAIN_WHITELIST
 ):
     """The main method that creates a New SubDomain (NSD) dataset from New Core Domain (NCD) dataset.
 
@@ -50,10 +50,9 @@ def compute_new_subdomains(
 
 def load_ncd(input_path):
     """Reads NCD dataset from the specified path.
-    Required columns: 'date', 'fqdn', 'domain_name'
 
     :param input_path: Path to Delta table with NCD data
-    :return: Loaded DataFrame
+    :return: DataFrame with columns ('date', 'fqdn', 'domain_name')
     """
     return (
         pyspark.read
@@ -102,9 +101,12 @@ def extract_subdomains(ncd_df, subdomain_depth=MAX_SUBDOMAIN_DEPTH):
     """
     return (
         ncd_df
-        .withColumn('labels', F.split('fqdn', '\.'))
-        .withColumn('domain_labels', F.split('domain_name', '\.'))
-        .withColumn('subdomain_label_start', F.size('labels') - F.size('domain_labels') - subdomain_depth + 1)
+        .withColumn('labels', F.split('fqdn', r'\.'))
+        .withColumn('domain_labels', F.split('domain_name', r'\.'))
+        .withColumn(
+            'subdomain_label_start',
+            F.size('labels') - F.size('domain_labels') - subdomain_depth + 1
+        )
         .withColumn(
             'subdomain_labels',
             F.slice(
@@ -123,7 +125,7 @@ def aggregate_subdomains(subdomains_df, nsd_date):
 
     :param subdomains_df: Dataframe with extracted subdomains
     :param nsd_date: date for calculating NSD
-    :return: New SubDomain Dataset for given nsd_date
+    :return: New SubDomain Dataset for given nsd_date with columns ('subdomain', 'domain_name', 'first_seen')
     """
     return (
         subdomains_df
