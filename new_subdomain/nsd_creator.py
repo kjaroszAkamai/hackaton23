@@ -89,6 +89,24 @@ def filter_whitelist_ncd(ncd_df, whitelist=DOMAIN_WHITELIST):
         .filter(~F.col('domain_name').isin(*whitelist))
     )
 
+def extract_subdomain(fqdn, core_domain, subdomain_depth=MAX_SUBDOMAIN_DEPTH):
+    """Extracts subdomain of expected length from fqdn
+
+    :param fqdn: fqdn to extract subdomain from
+    :param subdomain_depth: numbers of labels accepted *before* core domain
+        i.e. core domain = "a.b.c", fqdn = "sub2.sub1.a.b.c", with depth 1
+            will return "sub1.a.b.c"
+    :return: subdomain (str)
+    """
+    fqdn_labels = fqdn.split('.')
+    core_domain_labels = core_domain.split('.')
+
+    subdomain_label_start = len(fqdn_labels) - len(core_domain_labels) - subdomain_depth
+    subdomain_labels = fqdn_labels[subdomain_label_start:]
+
+    subdomain = '.'.join(subdomain_labels)
+
+    return subdomain
 
 def extract_subdomains(ncd_df, subdomain_depth=MAX_SUBDOMAIN_DEPTH):
     """Extracts subdomains of expected length from NCD FQDN
